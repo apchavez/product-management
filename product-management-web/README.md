@@ -80,11 +80,12 @@ El dev server redirige `/api/v1/*` al backend mediante el proxy de Vite.
 
 ---
 
-## Tests
+## Tests y coverage
 
 ```bash
-pnpm test         # ejecuta una vez (CI mode)
-pnpm test:watch   # modo watch
+pnpm test           # ejecuta una vez (CI mode)
+pnpm test:coverage  # ejecuta con reporte de cobertura
+pnpm test:watch     # modo watch
 ```
 
 27 tests en 3 suites:
@@ -92,6 +93,8 @@ pnpm test:watch   # modo watch
 - `useProducts.test.ts` — 11 tests: carga inicial, create, update, delete, errores, paginación, editingProduct
 - `ProductForm.test.tsx` — 10 tests: validación, envío, modo edición, revalidación en tiempo real
 - `ProductsTable.test.tsx` — 6 tests: renderizado, lista vacía, callbacks de editar/eliminar
+
+Coverage actual (Vitest v8): ~66% statements, ~75% branches, ~54% functions. Los archivos `App.tsx`, `main.tsx`, `routes.tsx` y `productsApi.ts` no tienen tests unitarios todavía. Objetivo del portafolio: ≥ 80% con tests de integración adicionales.
 
 ---
 
@@ -115,9 +118,9 @@ GitHub Actions (`.github/workflows/docker-publish-web.yml`):
 1. `tsc --noEmit` — verificación de tipos
 2. `pnpm test` — suite de tests
 3. `pnpm build` — build de producción
-4. Docker build + push a `ghcr.io/apchavez/product-web`
+4. Docker build + push a `ghcr.io/apchavez/product-web` (**solo en push a `main`**, no en PR)
 
-Se dispara solo en cambios dentro de `product-management-web/`.
+Se dispara en push **y** pull_request hacia `main` dentro de `product-management-web/`.
 
 ---
 

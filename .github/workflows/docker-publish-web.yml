@@ -7,6 +7,12 @@ on:
     paths:
       - 'product-management-web/**'
       - '.github/workflows/docker-publish-web.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'product-management-web/**'
+      - '.github/workflows/docker-publish-web.yml'
 
 jobs:
   build:
@@ -45,6 +51,7 @@ jobs:
   push:
     runs-on: ubuntu-latest
     needs: build
+    if: github.event_name == 'push'
 
     permissions:
       contents: read

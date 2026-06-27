@@ -27,6 +27,18 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       setupFiles: ['./src/test/setup.ts'],
       globals: true,
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'html'],
+        // Current: statements ~66%, branches ~75%, functions ~54%, lines ~66%.
+        // Target: 80% once App/main/routes/api files are covered.
+        thresholds: {
+          lines: 60,
+          functions: 50,
+          branches: 70,
+          statements: 60,
+        },
+      },
     }
   };
 });

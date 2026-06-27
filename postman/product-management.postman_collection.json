@@ -1,16 +1,20 @@
 {
   "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "name": "Product Management API",
+    "description": "CRUD de productos, búsquedas y health checks. Usa {{baseUrl}} para alternar entre entornos.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
-      "key": "url",
-      "value": "http://localhost:8080"
+      "key": "baseUrl",
+      "value": "",
+      "description": "URL base del API. Se sobreescribe por el environment activo."
     },
     {
-      "key": "id",
-      "value": ""
+      "key": "productId",
+      "value": "",
+      "description": "ID del producto creado. Se captura automáticamente al ejecutar '01 - Create Product'."
     }
   ],
   "item": [
@@ -23,8 +27,8 @@
             "exec": [
               "const json = pm.response.json();",
               "if (json.data && json.data.id) {",
-              "    pm.collectionVariables.set('id', json.data.id);",
-              "    console.log('id captured:', json.data.id);",
+              "    pm.collectionVariables.set('productId', json.data.id);",
+              "    console.log('productId captured:', json.data.id);",
               "}",
               "pm.test('Status 201', () => pm.response.to.have.status(201));",
               "pm.test('id returned', () => pm.expect(json.data.id).to.be.a('string').and.match(/^[a-f0-9]{24}$/));"
@@ -43,8 +47,8 @@
           "raw": "{\n  \"sku\": \"LAP-001\",\n  \"name\": \"Laptop Pro\",\n  \"description\": \"High performance laptop\",\n  \"category\": \"Technology\",\n  \"price\": 14999.99,\n  \"stock\": 10,\n  \"active\": true\n}"
         },
         "url": {
-          "raw": "{{url}}/api/v1/products",
-          "host": ["{{url}}"],
+          "raw": "{{baseUrl}}/api/v1/products",
+          "host": ["{{baseUrl}}"],
           "path": ["api", "v1", "products"]
         }
       }
@@ -69,8 +73,8 @@
       "request": {
         "method": "GET",
         "url": {
-          "raw": "{{url}}/api/v1/products?page=0&size=10",
-          "host": ["{{url}}"],
+          "raw": "{{baseUrl}}/api/v1/products?page=0&size=10",
+          "host": ["{{baseUrl}}"],
           "path": ["api", "v1", "products"],
           "query": [
             { "key": "page", "value": "0" },
@@ -99,9 +103,9 @@
       "request": {
         "method": "GET",
         "url": {
-          "raw": "{{url}}/api/v1/products/{{id}}",
-          "host": ["{{url}}"],
-          "path": ["api", "v1", "products", "{{id}}"]
+          "raw": "{{baseUrl}}/api/v1/products/{{productId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "products", "{{productId}}"]
         }
       }
     },
@@ -124,8 +128,8 @@
       "request": {
         "method": "GET",
         "url": {
-          "raw": "{{url}}/api/v1/products/sku/LAP-001",
-          "host": ["{{url}}"],
+          "raw": "{{baseUrl}}/api/v1/products/sku/LAP-001",
+          "host": ["{{baseUrl}}"],
           "path": ["api", "v1", "products", "sku", "LAP-001"]
         }
       }
@@ -150,8 +154,8 @@
       "request": {
         "method": "GET",
         "url": {
-          "raw": "{{url}}/api/v1/products/search?prefix=Lap",
-          "host": ["{{url}}"],
+          "raw": "{{baseUrl}}/api/v1/products/search?prefix=Lap",
+          "host": ["{{baseUrl}}"],
           "path": ["api", "v1", "products", "search"],
           "query": [{ "key": "prefix", "value": "Lap" }]
         }
@@ -184,9 +188,9 @@
           "raw": "{\n  \"sku\": \"LAP-001\",\n  \"name\": \"Laptop Pro Max\",\n  \"description\": \"Updated high performance laptop\",\n  \"category\": \"Technology\",\n  \"price\": 17999.99,\n  \"stock\": 5,\n  \"active\": true\n}"
         },
         "url": {
-          "raw": "{{url}}/api/v1/products/{{id}}",
-          "host": ["{{url}}"],
-          "path": ["api", "v1", "products", "{{id}}"]
+          "raw": "{{baseUrl}}/api/v1/products/{{productId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "products", "{{productId}}"]
         }
       }
     },
@@ -198,7 +202,7 @@
           "script": {
             "exec": [
               "pm.test('Status 200', () => pm.response.to.have.status(200));",
-              "pm.collectionVariables.set('id', '');"
+              "pm.collectionVariables.set('productId', '');"
             ],
             "type": "text/javascript"
           }
@@ -207,9 +211,9 @@
       "request": {
         "method": "DELETE",
         "url": {
-          "raw": "{{url}}/api/v1/products/{{id}}",
-          "host": ["{{url}}"],
-          "path": ["api", "v1", "products", "{{id}}"]
+          "raw": "{{baseUrl}}/api/v1/products/{{productId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "products", "{{productId}}"]
         }
       }
     },
@@ -232,8 +236,8 @@
       "request": {
         "method": "GET",
         "url": {
-          "raw": "{{url}}/api/v1/q/health",
-          "host": ["{{url}}"],
+          "raw": "{{baseUrl}}/api/v1/q/health",
+          "host": ["{{baseUrl}}"],
           "path": ["api", "v1", "q", "health"]
         }
       }
@@ -257,8 +261,8 @@
       "request": {
         "method": "GET",
         "url": {
-          "raw": "{{url}}/api/v1/q/health/live",
-          "host": ["{{url}}"],
+          "raw": "{{baseUrl}}/api/v1/q/health/live",
+          "host": ["{{baseUrl}}"],
           "path": ["api", "v1", "q", "health", "live"]
         }
       }
@@ -282,8 +286,8 @@
       "request": {
         "method": "GET",
         "url": {
-          "raw": "{{url}}/api/v1/q/health/ready",
-          "host": ["{{url}}"],
+          "raw": "{{baseUrl}}/api/v1/q/health/ready",
+          "host": ["{{baseUrl}}"],
           "path": ["api", "v1", "q", "health", "ready"]
         }
       }

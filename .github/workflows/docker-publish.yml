@@ -7,6 +7,12 @@ on:
     paths:
       - 'product-management-api/**'
       - '.github/workflows/docker-publish.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'product-management-api/**'
+      - '.github/workflows/docker-publish.yml'
 
 jobs:
   test:
@@ -38,9 +44,17 @@ jobs:
           MONGODB_CONNECTION_STRING: mongodb://localhost:27017
           MONGODB_DATABASE: products_test
 
+      - name: Verify coverage
+        working-directory: product-management-api
+        run: gradle jacocoTestCoverageVerification
+        env:
+          MONGODB_CONNECTION_STRING: mongodb://localhost:27017
+          MONGODB_DATABASE: products_test
+
   build-and-push:
     runs-on: ubuntu-latest
     needs: test
+    if: github.event_name == 'push'
 
     permissions:
       contents: read

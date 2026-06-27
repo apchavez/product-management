@@ -103,14 +103,17 @@ Backend en `http://localhost:8080` · Frontend en `http://localhost:5173`
 
 ---
 
-## Tests
+## Tests y coverage
 
 ```bash
 cd product-management-api
 ./gradlew test
+./gradlew jacocoTestCoverageVerification
 ```
 
 Requiere MongoDB corriendo en `localhost:27017`. Genera reporte de cobertura en `build/jacoco-report/`.
+
+Coverage verificado con JaCoCo: umbral actual ≥ 70% de líneas (LINE). Objetivo del portafolio: ≥ 80% expandiendo los tests de integración.
 
 ---
 
@@ -173,9 +176,25 @@ Con el proyecto corriendo, disponible en:
 
 ---
 
-## Colección Postman
+## Postman
 
-Importar `product-management.postman_collection.json` desde la raíz del repositorio. El request de creación captura automáticamente el `id` para usarlo en las peticiones siguientes.
+Los archivos están en `postman/` en la raíz del repositorio.
+
+| Archivo | Descripción |
+|---|---|
+| `product-management.postman_collection.json` | Colección principal (10 requests) |
+| `product-management.local.postman_environment.json` | Environment local — `http://localhost` (gateway Docker Compose) |
+| `product-management.k8s.postman_environment.json` | Environment K8s — `http://product.local` (Ingress nginx) |
+
+**Pasos de importación:**
+
+1. En Postman, ir a **Import** y seleccionar los tres archivos de `postman/`.
+2. Seleccionar el environment en la esquina superior derecha:
+   - **product-management — local** → apunta al gateway Docker Compose en `http://localhost`.
+   - **product-management — k8s** → apunta al Ingress en `http://product.local`.
+3. Ejecutar los requests en orden: `01 - Create Product` captura `productId` automáticamente para los requests `03`, `06` y `07`.
+
+> Para K8s, añadir `product.local` en `/etc/hosts` apuntando a la IP del Ingress controller.
 
 ---
 
@@ -198,8 +217,8 @@ docker build -t product-web .
 
 | Workflow | Trigger | Jobs |
 |---|---|---|
-| `docker-publish.yml` | Push a `main` en `product-management-api/**` | test → build → push `ghcr.io/apchavez/product-api:<sha>` |
-| `docker-publish-web.yml` | Push a `main` en `product-management-web/**` | type-check → test → build → push `ghcr.io/apchavez/product-web:<sha>` |
+| `docker-publish.yml` | Push y PR a `main` en `product-management-api/**` | test + coverage → (solo push) build → push `ghcr.io/apchavez/product-api:<sha>` |
+| `docker-publish-web.yml` | Push y PR a `main` en `product-management-web/**` | type-check → test → build → (solo push) push `ghcr.io/apchavez/product-web:<sha>` |
 
 ---
 
