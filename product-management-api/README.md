@@ -206,6 +206,7 @@ kubectl apply -f k8s/issuer.yaml
 kubectl apply -f k8s/secret.yaml
 kubectl apply -f k8s/configmap.yaml
 kubectl apply -f k8s/mongo.yaml
+kubectl apply -f k8s/redis.yaml
 kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/service.yaml
 kubectl apply -f k8s/web-deployment.yaml
