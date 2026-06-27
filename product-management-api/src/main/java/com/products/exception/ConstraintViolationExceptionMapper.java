@@ -1,6 +1,6 @@
 package com.products.exception;
 
-import com.products.domain.model.ApiResponse;
+import com.products.adapters.in.rest.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -21,13 +21,17 @@ public class ConstraintViolationExceptionMapper
 
         String details = exception.getConstraintViolations()
                 .stream()
-                .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                .map(v -> {
+                    String path = v.getPropertyPath().toString();
+                    // Strip the method-name prefix (e.g. "insert.request.sku" -> "sku")
+                    int lastDot = path.lastIndexOf('.');
+                    String field = lastDot >= 0 ? path.substring(lastDot + 1) : path;
+                    return field + ": " + v.getMessage();
+                })
                 .collect(Collectors.joining(", "));
 
         log.warn("Validation failed: " + details);
 
-        return ApiResponse.unprocessable(
-                "Validation error - " + details
-        );
+        return ApiResponse.badRequest("Validation error: " + details);
     }
 }

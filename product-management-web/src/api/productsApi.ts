@@ -13,7 +13,7 @@ export async function getProducts(page = 0, size = 10) {
 
   const products = json?.data?.products ?? [];
   const totalPages = json?.data?.totalPages ?? 1;
-  const totalElements = json?.data?.totalElements ?? products.length;
+  const totalElements = json?.data?.totalItems ?? products.length;
 
   return {
     content: products,
@@ -34,7 +34,7 @@ export async function createProduct(product: Product): Promise<Product> {
   return response.json();
 }
 
-export async function updateProduct(id: number, product: Product): Promise<Product> {
+export async function updateProduct(id: string, product: Product): Promise<Product> {
   const response = await fetch(`${BASE_URL}/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -44,7 +44,7 @@ export async function updateProduct(id: number, product: Product): Promise<Produ
   return response.json();
 }
 
-export async function deleteProduct(id: number): Promise<void> {
+export async function deleteProduct(id: string): Promise<void> {
   const response = await fetch(`${BASE_URL}/${id}`, {
     method: 'DELETE'
   });

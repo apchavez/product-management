@@ -1,56 +1,22 @@
-import { useEffect, useState } from 'react';
 import { Alert, Box, Button, Container, Pagination, Snackbar, Typography } from '@mui/material';
 import ProductForm from './components/ProductForm';
 import ProductsTable from './components/ProductsTable';
-import { createProduct, deleteProduct, getProducts, updateProduct } from './api/productsApi';
-import type { Product } from './types/product';
+import { useProducts } from './hooks/useProducts';
 
 export default function App() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [message, setMessage] = useState('');
-
-  const loadProducts = async (pageNumber = 1) => {
-    try {
-      const data = await getProducts(pageNumber - 1, 10);
-      setProducts(data.content ?? []);
-      setTotalPages(data.totalPages ?? 1);
-    } catch {
-      setMessage('Error cargando productos');
-    }
-  };
-
-  useEffect(() => {
-    loadProducts(page);
-  }, [page]);
-
-  const handleSubmit = async (product: Product) => {
-    try {
-      if (product.id) {
-        await updateProduct(product.id, product);
-        setMessage('Producto actualizado');
-      } else {
-        await createProduct(product);
-        setMessage('Producto creado');
-      }
-      setEditingProduct(null);
-      loadProducts(page);
-    } catch {
-      setMessage('Error guardando producto');
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    try {
-      await deleteProduct(id);
-      setMessage('Producto eliminado');
-      loadProducts(page);
-    } catch {
-      setMessage('Error eliminando producto');
-    }
-  };
+  const {
+    products,
+    editingProduct,
+    setEditingProduct,
+    page,
+    setPage,
+    totalPages,
+    message,
+    setMessage,
+    handleSubmit,
+    handleDelete,
+    reload,
+  } = useProducts();
 
   return (
     <Container maxWidth="lg">
@@ -72,7 +38,7 @@ export default function App() {
         </Box>
 
         <Box mt={2}>
-          <Button variant="outlined" onClick={() => loadProducts(page)}>
+          <Button variant="outlined" onClick={reload}>
             Recargar
           </Button>
         </Box>

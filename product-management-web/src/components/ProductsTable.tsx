@@ -15,7 +15,7 @@ import type { Product } from '../types/product';
 type Props = {
   products: Product[];
   onEdit: (product: Product) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
 };
 
 export default function ProductsTable({ products, onEdit, onDelete }: Props) {

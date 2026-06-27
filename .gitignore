@@ -105,5 +105,7 @@ temp/
 *.tiff
 
 # Docker / Kubernetes local artifacts
+# Raw k8s manifests (k8s/) are the source of truth — Helm chart is not used.
 *.tar
 product-management-api/product-api.yaml
+product-management-api/product-api/

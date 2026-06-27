@@ -18,24 +18,6 @@ public class Product extends BaseEntity {
     public Integer stock;
     public Boolean active = true;
 
-    public void update(
-            String name,
-            String description,
-            String category,
-            Double price,
-            Integer stock,
-            Boolean active,
-            String user) {
-
-        this.name = name;
-        this.description = description;
-        this.category = category;
-        this.price = price;
-        this.stock = stock;
-        this.active = active;
-        this.markUpdated(user);
-    }
-
     public void create(String user) {
         this.markCreated(user);
     }

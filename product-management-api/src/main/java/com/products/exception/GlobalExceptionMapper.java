@@ -1,6 +1,6 @@
 package com.products.exception;
 
-import com.products.domain.model.ApiResponse;
+import com.products.adapters.in.rest.ApiResponse;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;

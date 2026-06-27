@@ -1,4 +1,4 @@
-package com.products.domain.model;
+package com.products.adapters.in.rest;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.ws.rs.core.Response;
@@ -38,12 +38,6 @@ public record ApiResponse(Integer code, String description, Object data) {
                 .build();
     }
 
-    public static Response refreshed() {
-        return Response.ok(
-                new ApiResponse(200, "Cache refreshed successfully", null))
-                .build();
-    }
-
     public static Response health(Object data) {
         return Response.ok(
                 new ApiResponse(200, "Health check completed", data))
@@ -55,18 +49,6 @@ public record ApiResponse(Integer code, String description, Object data) {
     public static Response badRequest(String description) {
         return Response.status(Response.Status.BAD_REQUEST)
                 .entity(new ApiResponse(400, description, null))
-                .build();
-    }
-
-    public static Response unauthorized() {
-        return Response.status(Response.Status.UNAUTHORIZED)
-                .entity(new ApiResponse(401, "Unauthorized", null))
-                .build();
-    }
-
-    public static Response forbidden() {
-        return Response.status(Response.Status.FORBIDDEN)
-                .entity(new ApiResponse(403, "Forbidden", null))
                 .build();
     }
 
@@ -82,12 +64,6 @@ public record ApiResponse(Integer code, String description, Object data) {
                 .build();
     }
 
-    public static Response preconditionRequired(int code, String description) {
-        return Response.status(428)
-                .entity(new ApiResponse(code, description, null))
-                .build();
-    }
-
     public static Response unprocessable(String description) {
         return Response.status(422)
                 .entity(new ApiResponse(422, description, null))
@@ -99,12 +75,6 @@ public record ApiResponse(Integer code, String description, Object data) {
     public static Response internalError() {
         return Response.serverError()
                 .entity(new ApiResponse(500, "Internal server error", null))
-                .build();
-    }
-
-    public static Response serviceUnavailable() {
-        return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-                .entity(new ApiResponse(503, "Service unavailable", null))
                 .build();
     }
 
