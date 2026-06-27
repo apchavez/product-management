@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 
 metadata:
-  name: product-api-ingress
+  name: product-ingress
   annotations:
     cert-manager.io/cluster-issuer: selfsigned-cluster-issuer
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
@@ -12,17 +12,24 @@ spec:
 
   tls:
   - hosts:
-    - product-api.local
-    secretName: product-api-local-tls
+    - product.local
+    secretName: product-local-tls
 
   rules:
-  - host: product-api.local
+  - host: product.local
     http:
       paths:
-      - path: /
+      - path: /api/v1
         pathType: Prefix
         backend:
           service:
             name: product-api
+            port:
+              number: 80
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: product-web
             port:
               number: 80
