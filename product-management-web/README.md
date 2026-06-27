@@ -1,90 +1,126 @@
 # Product Management Web
 
-Frontend web para administración de productos.
-
-Aplicación desarrollada con React + TypeScript + Vite que consume la API REST del módulo backend.
+Frontend para administración de productos, construido con React + TypeScript + Vite.
 
 ---
 
-## Stack Tecnológico
+## Stack
 
-- React
-- TypeScript
-- Vite
-- Material UI
-- React Router DOM
-- pnpm
+| Capa | Tecnología |
+|---|---|
+| UI | React 18 + TypeScript |
+| Componentes | Material UI 5 |
+| Routing | React Router DOM 6 |
+| Build | Vite 6 |
+| Gestor de paquetes | pnpm |
+| Tests | Vitest 2 + React Testing Library |
+| Servidor prod | nginx (Docker) |
 
 ---
 
 ## Funcionalidades
 
-- Listado de productos
-- Crear producto
-- Editar producto
-- Eliminar producto
-- Paginación
-- Integración con backend REST
+- Listado paginado de productos
+- Crear / Editar / Eliminar producto
+- Validación de formulario en cliente
+- Feedback visual de éxito y error
 - UI responsive
-- Mensajes de éxito/error
 
 ---
 
-## Estructura del Proyecto
+## Estructura
 
+```
 src/
-api/productsApi.ts
-components/ProductForm.tsx
-components/ProductsTable.tsx
-types/product.ts
-App.tsx
-main.tsx
-routes.tsx
+├── api/
+│   └── productsApi.ts        # Llamadas HTTP al backend
+├── components/
+│   ├── __tests__/
+│   │   ├── ProductForm.test.tsx
+│   │   └── ProductsTable.test.tsx
+│   ├── ProductForm.tsx
+│   └── ProductsTable.tsx
+├── hooks/
+│   └── useProducts.ts        # Estado y lógica de productos
+├── test/
+│   └── setup.ts              # Configuración global de tests
+├── types/
+│   └── product.ts
+├── App.tsx
+├── main.tsx
+└── routes.tsx
+```
 
 ---
 
-## Variables de Entorno
+## Variables de entorno
 
-Crear archivo `.env`
+```bash
+cp .env.example .env
+```
 
-VITE_API_URL=http://localhost:8080
+| Variable | Descripción | Default |
+|---|---|---|
+| `VITE_API_URL` | URL base del backend | `http://localhost:8080` |
+
+En producción nginx enruta `/api/v1` al backend directamente; esta variable solo afecta al servidor de desarrollo.
 
 ---
 
-## Ejecutar Proyecto
+## Desarrollo local
 
+```bash
 pnpm install
-pnpm dev
+pnpm dev          # http://localhost:5173
+```
 
-Aplicación disponible en:
-
-http://localhost:5173
+El dev server redirige `/api/v1/*` al backend mediante el proxy de Vite.
 
 ---
 
-## Build Producción
+## Tests
 
+```bash
+pnpm test         # ejecuta una vez (CI mode)
+pnpm test:watch   # modo watch
+```
+
+- `ProductForm.test.tsx` — 10 tests: validación, envío, modo edición, revalidación en tiempo real
+- `ProductsTable.test.tsx` — 6 tests: renderizado, lista vacía, callbacks de editar/eliminar
+
+---
+
+## Build y Docker
+
+```bash
+# Build de producción
 pnpm build
 
----
-
-## Integración Backend
-
-Este frontend consume los siguientes endpoints:
-
-- GET /api/v1/products?page=0&size=10
-- POST /api/v1/products
-- PUT /api/v1/products/{id}
-- DELETE /api/v1/products/{id}
+# Imagen Docker (nginx + SPA)
+docker build -t product-web .
+docker run -p 80:80 product-web
+```
 
 ---
 
-## Objetivo Técnico
+## CI/CD
 
-Demostrar experiencia en:
+GitHub Actions (`.github/workflows/docker-publish-web.yml`):
 
-- Consumo de APIs REST
-- React moderno con TypeScript
-- Manejo de estado y formularios
-- UI profesional con Material UI
-- Integración real frontend/backend
+1. `tsc --noEmit` — verificación de tipos
+2. `pnpm test` — suite de tests
+3. `pnpm build` — build de producción
+4. Docker build + push a `ghcr.io/apchavez/product-web`
+
+Se dispara solo en cambios dentro de `product-management-web/`.
+
+---
+
+## Integración con el backend
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| `GET` | `/api/v1/products?page=0&size=10` | Listado paginado |
+| `POST` | `/api/v1/products` | Crear producto |
+| `PUT` | `/api/v1/products/{id}` | Actualizar producto |
+| `DELETE` | `/api/v1/products/{id}` | Eliminar producto |
