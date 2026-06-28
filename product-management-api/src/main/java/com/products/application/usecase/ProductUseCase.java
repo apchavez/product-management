@@ -1,10 +1,11 @@
 package com.products.application.usecase;
 
-import com.products.adapters.out.persistence.MongoProductRepository;
 import com.products.application.dto.ProductRequest;
 import com.products.application.dto.ProductResponse;
 import com.products.application.dto.ProductsPagedResponse;
 import com.products.application.mapper.ProductMapper;
+import com.products.application.port.in.ProductServicePort;
+import com.products.application.port.out.ProductRepositoryPort;
 import com.products.domain.model.PagedResponse;
 import com.products.domain.model.Product;
 import com.products.exception.DuplicateSkuException;
@@ -17,16 +18,17 @@ import org.jboss.logging.Logger;
 import java.util.List;
 
 @ApplicationScoped
-public class ProductUseCase {
+public class ProductUseCase implements ProductServicePort {
 
     private static final Logger log = Logger.getLogger(ProductUseCase.class);
 
     @Inject
-    MongoProductRepository productRepository;
+    ProductRepositoryPort productRepository;
 
     @Inject
     ProductMapper productMapper;
 
+    @Override
     public ProductResponse insert(ProductRequest request) {
         Product product = productMapper.toEntity(request);
         product.create("SYSTEM");
@@ -40,6 +42,7 @@ public class ProductUseCase {
         return productMapper.toResponse(product);
     }
 
+    @Override
     public void update(String id, ProductRequest request) {
         ObjectId objectId = new ObjectId(id);
 
@@ -50,11 +53,16 @@ public class ProductUseCase {
 
         productMapper.updateEntity(request, existing);
         existing.markUpdated("SYSTEM");
-        productRepository.update(existing);
+
+        boolean updated = productRepository.replace(existing);
+        if (!updated) {
+            throw new DuplicateSkuException();
+        }
 
         log.debug("Product updated successfully");
     }
 
+    @Override
     public void delete(String id) {
         ObjectId objectId = new ObjectId(id);
 
@@ -66,6 +74,7 @@ public class ProductUseCase {
         log.debug("Product deleted successfully");
     }
 
+    @Override
     public ProductResponse findById(String id) {
         ObjectId objectId = new ObjectId(id);
         Product product = productRepository.findByObjectId(objectId);
@@ -76,6 +85,7 @@ public class ProductUseCase {
         return productMapper.toResponse(product);
     }
 
+    @Override
     public ProductsPagedResponse findAll(int page, int size) {
         PagedResponse<Product> paged = productRepository.findAllProducts(page, size);
 
@@ -84,6 +94,7 @@ public class ProductUseCase {
         return new ProductsPagedResponse(responseList, paged.currentPage(), paged.totalPages(), paged.totalItems());
     }
 
+    @Override
     public ProductResponse findBySku(String sku) {
         Product product = productRepository.findBySku(sku);
         if (product == null) {
@@ -93,6 +104,7 @@ public class ProductUseCase {
         return productMapper.toResponse(product);
     }
 
+    @Override
     public List<ProductResponse> findByNamePrefix(String prefix) {
         List<Product> products = productRepository.findByNamePrefix(prefix);
         return productMapper.toResponseList(products);

@@ -1,10 +1,10 @@
 package com.products.application.usecase;
 
-import com.products.adapters.out.persistence.MongoProductRepository;
 import com.products.application.dto.ProductRequest;
 import com.products.application.dto.ProductResponse;
 import com.products.application.dto.ProductsPagedResponse;
 import com.products.application.mapper.ProductMapper;
+import com.products.application.port.out.ProductRepositoryPort;
 import com.products.domain.model.PagedResponse;
 import com.products.domain.model.Product;
 import com.products.exception.DuplicateSkuException;
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
 class ProductUseCaseTest {
 
     @InjectMock
-    MongoProductRepository productRepository;
+    ProductRepositoryPort productRepository;
 
     @InjectMock
     ProductMapper productMapper;
@@ -48,9 +48,7 @@ class ProductUseCaseTest {
         when(productRepository.insert(product)).thenReturn(true);
         when(productMapper.toResponse(product)).thenReturn(expectedResponse);
 
-        ProductResponse result = productUseCase.insert(request);
-
-        assertThat(result).isEqualTo(expectedResponse);
+        assertThat(productUseCase.insert(request)).isEqualTo(expectedResponse);
     }
 
     @Test
@@ -75,18 +73,14 @@ class ProductUseCaseTest {
         when(productRepository.findByObjectId(any(ObjectId.class))).thenReturn(product);
         when(productMapper.toResponse(product)).thenReturn(productResponse);
 
-        ProductResponse result = productUseCase.findById(id.toHexString());
-
-        assertThat(result).isEqualTo(productResponse);
+        assertThat(productUseCase.findById(id.toHexString())).isEqualTo(productResponse);
     }
 
     @Test
     void findById_shouldThrowProductNotFoundException_whenProductDoesNotExist() {
-        ObjectId id = new ObjectId();
-
         when(productRepository.findByObjectId(any(ObjectId.class))).thenReturn(null);
 
-        assertThatThrownBy(() -> productUseCase.findById(id.toHexString()))
+        assertThatThrownBy(() -> productUseCase.findById(new ObjectId().toHexString()))
                 .isInstanceOf(ProductNotFoundException.class);
     }
 
@@ -114,9 +108,7 @@ class ProductUseCaseTest {
         when(productRepository.findBySku("SKU-001")).thenReturn(product);
         when(productMapper.toResponse(product)).thenReturn(responseDto);
 
-        ProductResponse result = productUseCase.findBySku("SKU-001");
-
-        assertThat(result).isEqualTo(responseDto);
+        assertThat(productUseCase.findBySku("SKU-001")).isEqualTo(responseDto);
     }
 
     @Test
@@ -135,9 +127,7 @@ class ProductUseCaseTest {
         when(productRepository.findByNamePrefix("Lap")).thenReturn(List.of(product));
         when(productMapper.toResponseList(anyList())).thenReturn(List.of(responseDto));
 
-        List<ProductResponse> result = productUseCase.findByNamePrefix("Lap");
-
-        assertThat(result).hasSize(1);
+        assertThat(productUseCase.findByNamePrefix("Lap")).hasSize(1);
     }
 
     @Test
@@ -145,9 +135,7 @@ class ProductUseCaseTest {
         when(productRepository.findByNamePrefix("XYZ")).thenReturn(List.of());
         when(productMapper.toResponseList(anyList())).thenReturn(List.of());
 
-        List<ProductResponse> result = productUseCase.findByNamePrefix("XYZ");
-
-        assertThat(result).isEmpty();
+        assertThat(productUseCase.findByNamePrefix("XYZ")).isEmpty();
     }
 
     @Test
@@ -158,38 +146,45 @@ class ProductUseCaseTest {
 
         when(productRepository.findByObjectId(any(ObjectId.class))).thenReturn(existing);
         doNothing().when(productMapper).updateEntity(request, existing);
-        doNothing().when(productRepository).update(existing);
+        when(productRepository.replace(existing)).thenReturn(true);
 
         productUseCase.update(id.toHexString(), request);
     }
 
     @Test
     void update_shouldThrowProductNotFoundException_whenProductDoesNotExist() {
-        ObjectId id = new ObjectId();
-        ProductRequest request = mock(ProductRequest.class);
-
         when(productRepository.findByObjectId(any(ObjectId.class))).thenReturn(null);
 
-        assertThatThrownBy(() -> productUseCase.update(id.toHexString(), request))
+        assertThatThrownBy(() -> productUseCase.update(new ObjectId().toHexString(), mock(ProductRequest.class)))
                 .isInstanceOf(ProductNotFoundException.class);
     }
 
     @Test
-    void delete_shouldComplete_whenProductExists() {
+    void update_shouldThrowDuplicateSkuException_whenSkuConflictsWithAnotherProduct() {
         ObjectId id = new ObjectId();
+        ProductRequest request = mock(ProductRequest.class);
+        Product existing = new Product();
 
+        when(productRepository.findByObjectId(any(ObjectId.class))).thenReturn(existing);
+        doNothing().when(productMapper).updateEntity(request, existing);
+        when(productRepository.replace(existing)).thenReturn(false);
+
+        assertThatThrownBy(() -> productUseCase.update(id.toHexString(), request))
+                .isInstanceOf(DuplicateSkuException.class);
+    }
+
+    @Test
+    void delete_shouldComplete_whenProductExists() {
         when(productRepository.deleteByObjectId(any(ObjectId.class))).thenReturn(true);
 
-        productUseCase.delete(id.toHexString());
+        productUseCase.delete(new ObjectId().toHexString());
     }
 
     @Test
     void delete_shouldThrowProductNotFoundException_whenProductDoesNotExist() {
-        ObjectId id = new ObjectId();
-
         when(productRepository.deleteByObjectId(any(ObjectId.class))).thenReturn(false);
 
-        assertThatThrownBy(() -> productUseCase.delete(id.toHexString()))
+        assertThatThrownBy(() -> productUseCase.delete(new ObjectId().toHexString()))
                 .isInstanceOf(ProductNotFoundException.class);
     }
 }

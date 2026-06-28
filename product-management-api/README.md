@@ -24,22 +24,38 @@ Aplicación fullstack para administración de productos. Backend con arquitectur
 
 ## Arquitectura del backend
 
+Arquitectura hexagonal (ports & adapters). El núcleo de la aplicación no depende de ningún framework de infraestructura: los adaptadores implementan los puertos definidos en la capa de aplicación.
+
 ```text
 src/main/java/com/products/
-├── adapters/
-│   ├── in/rest/          ProductResource, ApiResponse
-│   └── out/persistence/  MongoProductRepository
-├── application/
-│   ├── dto/              ProductRequest, ProductResponse, ProductsPagedResponse
-│   ├── mapper/           ProductMapper (MapStruct)
-│   └── usecase/          ProductUseCase
-├── domain/
-│   └── model/            Product, BaseEntity, PagedResponse
-├── exception/            GlobalExceptionMapper, DomainExceptionMapper,
-│                         ConstraintViolationExceptionMapper,
-│                         JsonProcessingExceptionMapper,
-│                         ProductNotFoundException, DuplicateSkuException
-└── health/               LivenessCheck, ReadinessCheck
+├── adapters/                         ← Capa de infraestructura
+│   ├── in/rest/                        Adaptador de entrada
+│   │   ├── ProductResource               JAX-RS — inyecta ProductServicePort
+│   │   └── ApiResponse                   Envoltorio estándar de respuestas
+│   └── out/persistence/                Adaptador de salida
+│       └── MongoProductRepository        implements ProductRepositoryPort
+│                                         (Panache + caché Caffeine/Redis)
+│
+├── application/                      ← Núcleo de la aplicación
+│   ├── port/
+│   │   ├── in/
+│   │   │   └── ProductServicePort        Puerto de entrada (contrato del use case)
+│   │   └── out/
+│   │       └── ProductRepositoryPort     Puerto de salida (contrato de persistencia)
+│   ├── dto/                            ProductRequest · ProductResponse · ProductsPagedResponse
+│   ├── mapper/                         ProductMapper (MapStruct)
+│   └── usecase/
+│       └── ProductUseCase              implements ProductServicePort
+│                                       inyecta ProductRepositoryPort
+│
+├── domain/                           ← Modelo de dominio puro
+│   └── model/                          Product · BaseEntity · PagedResponse
+│
+├── exception/                        GlobalExceptionMapper · DomainExceptionMapper
+│                                     ConstraintViolationExceptionMapper
+│                                     JsonProcessingExceptionMapper
+│                                     ProductNotFoundException · DuplicateSkuException
+└── health/                           LivenessCheck · ReadinessCheck (MongoDB + Redis)
 ```
 
 ---

@@ -1,5 +1,7 @@
 package com.products.application.dto;
 
+import java.time.Instant;
+
 public record ProductResponse(
         String id,
         String sku,
@@ -9,5 +11,7 @@ public record ProductResponse(
         Double price,
         Integer stock,
         Boolean active,
-        String userUpdated) {
+        String userUpdated,
+        Instant created,
+        Instant updated) {
 }

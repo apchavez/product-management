@@ -1,23 +1,15 @@
 package com.products.adapters.in.rest;
 
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.model.IndexOptions;
+import com.products.support.BaseMongoIntegrationTest;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
-import jakarta.inject.Inject;
-import org.bson.Document;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
 @QuarkusTest
-class ProductResourceTest {
-
-    @Inject
-    MongoClient mongoClient;
+class ProductResourceTest extends BaseMongoIntegrationTest {
 
     private static final String BASE = "/api/v1/products";
 
@@ -32,19 +24,6 @@ class ProductResourceTest {
               "active": true
             }
             """;
-
-    @BeforeEach
-    void setUp() {
-        var col = mongoClient.getDatabase("products_test").getCollection("products");
-        col.deleteMany(new Document());
-        col.createIndex(new Document("sku", 1), new IndexOptions().unique(true));
-    }
-
-    @AfterEach
-    void tearDown() {
-        mongoClient.getDatabase("products_test").getCollection("products")
-                .deleteMany(new Document());
-    }
 
     private String createAndGetId() {
         return given()
@@ -247,6 +226,34 @@ class ProductResourceTest {
             .body("code", equalTo(400));
     }
 
+    @Test
+    void updateProduct_skuAlreadyTakenByOtherProduct_returns409() {
+        // Product A with SKU-RT-001
+        String idA = createAndGetId();
+
+        // Product B with a different SKU
+        String bodyB = """
+                {"sku":"SKU-RT-002","name":"Product B","description":"B","category":"Technology","price":10.0,"stock":1,"active":true}
+                """;
+        String idB = given()
+                .contentType(ContentType.JSON).body(bodyB)
+                .when().post(BASE)
+                .then().statusCode(201)
+                .extract().path("data.id");
+
+        // Try to update Product B's SKU to match Product A's SKU
+        String conflictBody = """
+                {"sku":"SKU-RT-001","name":"Product B","description":"B","category":"Technology","price":10.0,"stock":1,"active":true}
+                """;
+        given()
+            .contentType(ContentType.JSON).body(conflictBody)
+        .when()
+            .put(BASE + "/{id}", idB)
+        .then()
+            .statusCode(409)
+            .body("code", equalTo(409));
+    }
+
     // ─── DELETE /api/v1/products/{id} ─────────────────────────────────────────
 
     @Test
@@ -381,5 +388,20 @@ class ProductResourceTest {
         .then()
             .statusCode(400)
             .body("code", equalTo(400));
+    }
+
+    // ─── Audit timestamps ─────────────────────────────────────────────────────
+
+    @Test
+    void findById_responseIncludesAuditTimestamps() {
+        String id = createAndGetId();
+
+        given()
+        .when()
+            .get(BASE + "/{id}", id)
+        .then()
+            .statusCode(200)
+            .body("data.created", notNullValue())
+            .body("data.updated", notNullValue());
     }
 }
