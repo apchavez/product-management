@@ -224,7 +224,7 @@ docker build -t product-web .
 
 ## Kubernetes
 
-Los manifests están en `k8s/`. Aplicar en orden:
+Los manifests están en `k8s/` en la raíz del repositorio. Aplicar en orden desde la raíz:
 
 > **Paso previo:** crear el secret con credenciales reales antes de aplicar los manifests:
 > ```bash

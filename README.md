@@ -20,13 +20,23 @@ Aplicación fullstack para administración de productos, construida como portafo
 product-management/
 ├── product-management-api/         Backend Java + Quarkus
 │   ├── src/
-│   ├── k8s/                        Manifests de Kubernetes
 │   ├── Dockerfile
 │   └── build.gradle
 ├── product-management-web/         Frontend React + Vite
 │   ├── src/
 │   ├── Dockerfile
 │   └── nginx.conf
+├── k8s/                            Manifests de Kubernetes (stack completo)
+│   ├── issuer.yaml
+│   ├── secret.yaml
+│   ├── configmap.yaml
+│   ├── mongo.yaml
+│   ├── redis.yaml
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   ├── web-deployment.yaml
+│   ├── web-service.yaml
+│   └── ingress.yaml
 ├── docker/
 │   └── gateway.conf                nginx gateway (Docker Compose)
 ├── postman/
