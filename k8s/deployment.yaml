@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: product-api
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: product-api
+
+  template:
+    metadata:
+      labels:
+        app: product-api
+
+    spec:
+      containers:
+      - name: product-api
+        image: ghcr.io/apchavez/product-api:latest
+        imagePullPolicy: Always
+
+        envFrom:
+        - configMapRef:
+            name: product-api-config
+        - secretRef:
+            name: mongo-secret
+
+        ports:
+        - containerPort: 8080
+
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+        livenessProbe:
+          httpGet:
+            path: /api/v1/q/health/live
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /api/v1/q/health/ready
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          failureThreshold: 3

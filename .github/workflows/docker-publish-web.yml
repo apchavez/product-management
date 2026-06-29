@@ -1,0 +1,82 @@
+name: Build and Push Web
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'product-management-web/**'
+      - '.github/workflows/docker-publish-web.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'product-management-web/**'
+      - '.github/workflows/docker-publish-web.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        working-directory: product-management-web
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        working-directory: product-management-web
+        run: pnpm exec tsc --noEmit
+
+      - name: Test
+        working-directory: product-management-web
+        run: pnpm test
+
+      - name: Coverage
+        working-directory: product-management-web
+        run: pnpm test:coverage
+
+      - name: Build
+        working-directory: product-management-web
+        run: pnpm build
+
+  push:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./product-management-web
+          push: true
+          tags: |
+            ghcr.io/apchavez/product-web:latest
+            ghcr.io/apchavez/product-web:${{ github.sha }}
