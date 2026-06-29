@@ -1,32 +1,49 @@
+[![Backend CI](https://github.com/apchavez/product-management/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/apchavez/product-management/actions/workflows/docker-publish.yml)
+[![Frontend CI](https://github.com/apchavez/product-management/actions/workflows/docker-publish-web.yml/badge.svg)](https://github.com/apchavez/product-management/actions/workflows/docker-publish-web.yml)
+
 # Product Management Platform
 
-Aplicación fullstack para administración de productos, construida como portafolio técnico para demostrar experiencia en desarrollo backend con Java, APIs REST modernas, arquitectura hexagonal e integración con frontend React.
+Fullstack application for product administration built as a portfolio project to demonstrate end-to-end development: Java 21 REST API with hexagonal architecture, React frontend, and a complete Kubernetes deployment.
 
 ---
 
-## Stack
+## Tech Stack
 
-| Capa | Tecnología |
+| Layer | Technology |
 |---|---|
 | Backend | Java 21 · Quarkus 3 · MongoDB · Redis · MapStruct · Lombok |
 | Frontend | React 18 · TypeScript · Vite · Material UI |
-| Infraestructura | Docker · Kubernetes · GitHub Actions |
+| Infrastructure | Docker · Kubernetes · GitHub Actions |
 
 ---
 
-## Estructura del repositorio
+## Architecture
+
+The backend follows **Hexagonal Architecture (Ports & Adapters)**:
+
+- **Domain layer** — Product entity and port contracts (repository interfaces)
+- **Application layer** — Use cases for CRUD operations
+- **Infrastructure layer** — MongoDB adapter, Redis cache adapter, REST controller
+
+The frontend is a single-page application built with React + Vite, communicating with the backend through a REST API.
+
+Both services are independently containerized and orchestrated via Kubernetes or Docker Compose.
+
+---
+
+## Repository Structure
 
 ```text
 product-management/
-├── product-management-api/         Backend Java + Quarkus
+├── product-management-api/         Java + Quarkus backend
 │   ├── src/
 │   ├── Dockerfile
 │   └── build.gradle
-├── product-management-web/         Frontend React + Vite
+├── product-management-web/         React + Vite frontend
 │   ├── src/
 │   ├── Dockerfile
 │   └── nginx.conf
-├── k8s/                            Manifests de Kubernetes (stack completo)
+├── k8s/                            Kubernetes manifests (full stack)
 │   ├── issuer.yaml
 │   ├── secret.yaml
 │   ├── configmap.yaml
@@ -44,34 +61,81 @@ product-management/
 │   ├── product-management.local.postman_environment.json
 │   └── product-management.k8s.postman_environment.json
 ├── .github/workflows/
-│   ├── docker-publish.yml          CI/CD backend
-│   └── docker-publish-web.yml      CI/CD frontend
+│   ├── docker-publish.yml          Backend CI/CD
+│   └── docker-publish-web.yml      Frontend CI/CD
 ├── docker-compose.yml
 └── README.md
 ```
 
 ---
 
-## Postman
+## Getting Started
 
-Los archivos están en `postman/`.
+### Docker Compose (recommended for local dev)
 
-| Archivo | Descripción |
-|---|---|
-| `product-management.postman_collection.json` | Colección principal (10 requests) |
-| `product-management.local.postman_environment.json` | Environment local vía Docker Compose |
-| `product-management.k8s.postman_environment.json` | Environment Kubernetes (`product.local`) |
+```bash
+docker compose up --build
+```
 
-**Pasos de importación:**
+- Backend API: `http://localhost:8080`
+- Frontend: `http://localhost:3000`
 
-1. En Postman, ir a **Import** y seleccionar los tres archivos de la carpeta `postman/`.
-2. En el selector de environments (esquina superior derecha), elegir **product-management — local** o **product-management — k8s** según corresponda.
-3. Ejecutar los requests en orden: el request `01 - Create Product` captura el `productId` automáticamente para los siguientes requests.
+### Kubernetes
 
-> Para K8s, añadir `product.local` en `/etc/hosts` apuntando a la IP del Ingress controller antes de ejecutar la colección.
+```bash
+kubectl apply -f k8s/
+```
+
+Add `product.local` to `/etc/hosts` pointing to your Ingress controller IP, then access the app at `http://product.local`.
 
 ---
 
-## Documentación detallada
+## CI/CD
 
-Ver [`product-management-api/README.md`](product-management-api/README.md) para instrucciones completas de instalación, ejecución, endpoints y despliegue.
+GitHub Actions builds and publishes Docker images to GHCR on every push to `main`:
+
+| Workflow | Publishes |
+|---|---|
+| `docker-publish.yml` | `ghcr.io/apchavez/product-management-api` |
+| `docker-publish-web.yml` | `ghcr.io/apchavez/product-management-web` |
+
+---
+
+## Postman
+
+The `postman/` folder contains the collection and two environments.
+
+| File | Description |
+|---|---|
+| `product-management.postman_collection.json` | Main collection (10 requests) |
+| `product-management.local.postman_environment.json` | Local environment via Docker Compose |
+| `product-management.k8s.postman_environment.json` | Kubernetes environment (`product.local`) |
+
+Import all three files into Postman, select the appropriate environment, and run the requests in order — `01 - Create Product` automatically captures `productId` for subsequent requests.
+
+> For K8s: add `product.local` to `/etc/hosts` pointing to the Ingress controller IP before running the collection.
+
+---
+
+## What This Project Demonstrates
+
+- Fullstack development: Java backend + React frontend as independent services
+- Hexagonal architecture on Quarkus with MongoDB persistence and Redis caching
+- Complete Kubernetes manifests: ConfigMap, Secret, Deployments, Services, Ingress
+- Multi-stage Docker builds for both backend and frontend
+- Independent CI/CD pipelines per service (backend and frontend published separately to GHCR)
+
+---
+
+## Detailed Documentation
+
+See [`product-management-api/README.md`](product-management-api/README.md) for complete backend setup, endpoints, and deployment instructions.
+
+---
+
+## Related Projects
+
+| Project | Description |
+|---|---|
+| [reactive-customer-service](https://github.com/apchavez/reactive-customer-service) | Java 21 reactive REST API with Spring Boot WebFlux, hexagonal architecture, PostgreSQL, and Kubernetes deployment |
+| [clinic-scheduling-azure](https://github.com/apchavez/clinic-scheduling-azure) | Java 21 serverless platform on Azure Functions with Clean Architecture |
