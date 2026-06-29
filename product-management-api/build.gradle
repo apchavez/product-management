@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'io.quarkus' version '3.32.1'
     id 'jacoco'
+    id 'org.sonarqube' version '5.1.0.4882'
 }
 
 group = 'com.products'
