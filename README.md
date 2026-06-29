@@ -1,5 +1,5 @@
-[![Backend CI](https://github.com/apchavez/product-management/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/apchavez/product-management/actions/workflows/docker-publish.yml)
-[![Frontend CI](https://github.com/apchavez/product-management/actions/workflows/docker-publish-web.yml/badge.svg)](https://github.com/apchavez/product-management/actions/workflows/docker-publish-web.yml)
+[![Backend CI](https://github.com/apchavez/quarkus-react-fullstack-k8s/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/apchavez/quarkus-react-fullstack-k8s/actions/workflows/docker-publish.yml)
+[![Frontend CI](https://github.com/apchavez/quarkus-react-fullstack-k8s/actions/workflows/docker-publish-web.yml/badge.svg)](https://github.com/apchavez/quarkus-react-fullstack-k8s/actions/workflows/docker-publish-web.yml)
 
 # Product Management Platform
 
@@ -96,8 +96,8 @@ GitHub Actions builds and publishes Docker images to GHCR on every push to `main
 
 | Workflow | Publishes |
 |---|---|
-| `docker-publish.yml` | `ghcr.io/apchavez/product-management-api` |
-| `docker-publish-web.yml` | `ghcr.io/apchavez/product-management-web` |
+| `docker-publish.yml` | `ghcr.io/apchavez/quarkus-react-fullstack-k8s-api` |
+| `docker-publish-web.yml` | `ghcr.io/apchavez/quarkus-react-fullstack-k8s-web` |
 
 ---
 
@@ -137,5 +137,5 @@ See [`product-management-api/README.md`](product-management-api/README.md) for c
 
 | Project | Description |
 |---|---|
-| [reactive-customer-service](https://github.com/apchavez/reactive-customer-service) | Java 21 reactive REST API with Spring Boot WebFlux, hexagonal architecture, PostgreSQL, and Kubernetes deployment |
-| [clinic-scheduling-azure](https://github.com/apchavez/clinic-scheduling-azure) | Java 21 serverless platform on Azure Functions with Clean Architecture |
+| [spring-webflux-hexagonal-arch](https://github.com/apchavez/spring-webflux-hexagonal-arch) | Java 21 reactive REST API with Spring Boot WebFlux, hexagonal architecture, PostgreSQL, and Kubernetes deployment |
+| [clean-arch-azure-functions-java](https://github.com/apchavez/clean-arch-azure-functions-java) | Java 21 serverless platform on Azure Functions with Clean Architecture |
