@@ -9,3 +9,4 @@ data:
   PORT: "8080"
   MONGODB_DATABASE: products
   REDIS_URL: redis://redis-service:6379
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
