@@ -103,7 +103,7 @@ export default function ProductForm({ initialData, onSubmit, onCancelEdit }: Pro
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ mb: 4 }}>
       <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <TextField
             fullWidth
             label="SKU"
@@ -113,7 +113,7 @@ export default function ProductForm({ initialData, onSubmit, onCancelEdit }: Pro
             helperText={errors.sku}
           />
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <TextField
             fullWidth
             label="Nombre"
@@ -123,7 +123,7 @@ export default function ProductForm({ initialData, onSubmit, onCancelEdit }: Pro
             helperText={errors.name}
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <TextField
             fullWidth
             label="Descripción"
@@ -133,7 +133,7 @@ export default function ProductForm({ initialData, onSubmit, onCancelEdit }: Pro
             helperText={errors.description}
           />
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <TextField
             fullWidth
             label="Categoría"
@@ -143,7 +143,7 @@ export default function ProductForm({ initialData, onSubmit, onCancelEdit }: Pro
             helperText={errors.category}
           />
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid size={{ xs: 12, md: 3 }}>
           <TextField
             fullWidth
             type="number"
@@ -152,10 +152,10 @@ export default function ProductForm({ initialData, onSubmit, onCancelEdit }: Pro
             onChange={(e) => handleChange('price', Number(e.target.value))}
             error={!!errors.price}
             helperText={errors.price}
-            inputProps={{ min: 0, step: 0.01 }}
+            slotProps={{ htmlInput: { min: 0, step: 0.01 } }}
           />
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid size={{ xs: 12, md: 3 }}>
           <TextField
             fullWidth
             type="number"
@@ -164,10 +164,10 @@ export default function ProductForm({ initialData, onSubmit, onCancelEdit }: Pro
             onChange={(e) => handleChange('stock', parseInt(e.target.value, 10) || 0)}
             error={!!errors.stock}
             helperText={errors.stock}
-            inputProps={{ min: 0, step: 1 }}
+            slotProps={{ htmlInput: { min: 0, step: 1 } }}
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <FormControlLabel
             control={
               <Checkbox
@@ -178,7 +178,7 @@ export default function ProductForm({ initialData, onSubmit, onCancelEdit }: Pro
             label="Activo"
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <Button type="submit" variant="contained" sx={{ mr: 2 }}>
             {form.id ? 'Actualizar' : 'Crear'}
           </Button>

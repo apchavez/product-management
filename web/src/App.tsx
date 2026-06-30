@@ -20,7 +20,7 @@ export default function App() {
 
   return (
     <Container maxWidth="lg">
-      <Box py={4}>
+      <Box sx={{ py: 4 }}>
         <Typography variant="h4" gutterBottom>
           Product Management
         </Typography>
@@ -33,11 +33,11 @@ export default function App() {
 
         <ProductsTable products={products} onEdit={setEditingProduct} onDelete={handleDelete} />
 
-        <Box mt={3} display="flex" justifyContent="center">
+        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
           <Pagination count={totalPages} page={page} onChange={(_, value) => setPage(value)} color="primary" />
         </Box>
 
-        <Box mt={2}>
+        <Box sx={{ mt: 2 }}>
           <Button variant="outlined" onClick={reload}>
             Recargar
           </Button>
