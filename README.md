@@ -131,6 +131,27 @@ GitHub Actions runs tests and publishes Docker images to GHCR:
 
 ---
 
+## Observability
+
+| Signal | Endpoint | Notes |
+|---|---|---|
+| Metrics | `/api/v1/q/metrics` | Micrometer + Prometheus format |
+| Health (liveness) | `/api/v1/q/health/live` | SmallRye Health |
+| Health (readiness) | `/api/v1/q/health/ready` | Pings MongoDB and Redis with 2s timeout |
+| Traces | OTLP gRPC `$OTEL_EXPORTER_OTLP_ENDPOINT` | OpenTelemetry auto-instrumentation |
+
+### Alerting
+
+`k8s/prometheus-rule.yaml` defines a `PrometheusRule` (requires [Prometheus Operator](https://prometheus-operator.dev)) with three rules:
+
+| Alert | Condition | Severity |
+|---|---|---|
+| `HighErrorRate` | >5% of requests return 5xx for 2 min | critical |
+| `HighP99Latency` | P99 latency >1s for 2 min | warning |
+| `PodNotReady` | Any pod not ready for 2 min | critical |
+
+---
+
 ## Postman
 
 The `postman/` folder contains the collection and two environments.
