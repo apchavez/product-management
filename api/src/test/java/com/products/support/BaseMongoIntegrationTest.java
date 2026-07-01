@@ -2,11 +2,13 @@ package com.products.support;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.IndexOptions;
+import io.quarkus.test.common.QuarkusTestResource;
 import jakarta.inject.Inject;
 import org.bson.Document;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
+@QuarkusTestResource(MongoDbTestResource.class)
 public abstract class BaseMongoIntegrationTest {
 
     @Inject

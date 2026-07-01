@@ -13,7 +13,7 @@ Fullstack application for product administration built as a portfolio project to
 
 | Layer | Technology |
 |---|---|
-| Backend | Java 21 · Quarkus 3 · MongoDB · Redis · MapStruct · Lombok |
+| Backend | Java 21 · Quarkus 3 · MongoDB · Redis · MapStruct · Lombok · Testcontainers |
 | Frontend | React 18 · TypeScript · Vite · Material UI |
 | Infrastructure | Docker · Kubernetes · GitHub Actions |
 
@@ -120,7 +120,7 @@ cd web
 pnpm test:e2e
 ```
 
-Both services have independent test suites. The backend covers use cases, persistence adapters, and REST endpoints. All tests run locally without Docker or external services.
+Both services have independent test suites. The backend covers use cases, persistence adapters, and REST endpoints. Integration tests use **Testcontainers** with a real MongoDB 7.0 instance — Docker is required to run them.
 
 See [`api/README.md`](api/README.md) for full coverage details and test descriptions.
 
