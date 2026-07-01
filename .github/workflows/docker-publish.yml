@@ -53,6 +53,8 @@ jobs:
     permissions:
       contents: write
       packages: write
+      id-token: write
+      attestations: write
 
     steps:
       - name: Checkout repository
@@ -72,6 +74,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: ./api
@@ -82,6 +85,29 @@ jobs:
             ghcr.io/apchavez/product-api:sha-${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign API image with Cosign (keyless)
+        run: |
+          cosign sign --yes \
+            "ghcr.io/apchavez/product-api@${{ steps.build.outputs.digest }}"
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ghcr.io/apchavez/product-api
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ghcr.io/apchavez/product-api@${{ steps.build.outputs.digest }}
+          artifact-name: sbom-api-${{ github.sha }}.spdx.json
+          output-file: sbom-api.spdx.json
+          format: spdx-json
 
       - name: Pin image tag in k8s deployment manifest
         run: |
