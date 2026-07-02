@@ -4,4 +4,4 @@
 # This file only exists so CI has somewhere to persist the last-built image tag:
 # docker-publish-web.yml sed-patches the line below after each build, and deploy.yml
 # greps it to read the tag it passes to `helm upgrade --set web.image.tag=...`.
-image: ghcr.io/apchavez/product-web:latest
+image: ghcr.io/apchavez/product-web:sha-aec061ff3f776ba9fec4ab493198a4b070ca767c
