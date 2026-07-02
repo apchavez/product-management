@@ -62,6 +62,16 @@ function mockProducts(products: Product[]) {
 }
 
 test.describe('Products', () => {
+  test.beforeEach(async ({ page }) => {
+    // Product routes are behind RequireAuth; seed a fake session so tests can
+    // focus on product CRUD instead of exercising the real login round trip.
+    await page.addInitScript(() => {
+      localStorage.setItem('auth_token', 'e2e-fake-token');
+      localStorage.setItem('auth_username', 'admin');
+      localStorage.setItem('auth_roles', JSON.stringify(['ADMIN', 'USER']));
+    });
+  });
+
   test('shows empty state when no products exist', async ({ page }) => {
     await page.route('**/api/v1/products**', mockProducts([]));
 
@@ -133,10 +143,11 @@ test.describe('Products', () => {
 
     await page.goto('/');
 
+    // ProductForm only validates on submit, not on blur.
     await page.getByLabel('SKU').fill('invalid sku!');
-    await page.getByLabel('SKU').blur();
+    await page.getByRole('button', { name: 'Crear' }).click();
 
-    await expect(page.getByText(/SKU/i)).toBeVisible();
+    await expect(page.getByText(/letras, números/i)).toBeVisible();
   });
 
   test('shows validation error for empty required fields', async ({ page }) => {
@@ -144,9 +155,9 @@ test.describe('Products', () => {
 
     await page.goto('/');
 
-    await page.getByLabel('Nombre').focus();
-    await page.getByLabel('Nombre').blur();
+    // ProductForm only validates on submit, not on blur.
+    await page.getByRole('button', { name: 'Crear' }).click();
 
-    await expect(page.getByText(/requerido|required/i)).toBeVisible();
+    await expect(page.getByText(/requerido/i).first()).toBeVisible();
   });
 });

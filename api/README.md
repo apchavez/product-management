@@ -30,7 +30,8 @@ Arquitectura hexagonal (ports & adapters). El núcleo de la aplicación no depen
 src/main/java/com/products/
 ├── adapters/                         ← Capa de infraestructura
 │   ├── in/rest/                        Adaptador de entrada
-│   │   ├── ProductResource               JAX-RS — inyecta ProductServicePort
+│   │   ├── ProductResource               JAX-RS — inyecta ProductServicePort (requiere JWT)
+│   │   ├── AuthResource                  JAX-RS — POST /api/v1/auth/login (público)
 │   │   └── ApiResponse                   Envoltorio estándar de respuestas
 │   └── out/persistence/                Adaptador de salida
 │       └── MongoProductRepository        implements ProductRepositoryPort
@@ -39,14 +40,18 @@ src/main/java/com/products/
 ├── application/                      ← Núcleo de la aplicación
 │   ├── port/
 │   │   ├── in/
-│   │   │   └── ProductServicePort        Puerto de entrada (contrato del use case)
+│   │   │   ├── ProductServicePort        Puerto de entrada (contrato del use case)
+│   │   │   └── AuthServicePort           Puerto de entrada — login
 │   │   └── out/
 │   │       └── ProductRepositoryPort     Puerto de salida (contrato de persistencia)
 │   ├── dto/                            ProductRequest · ProductResponse · ProductsPagedResponse
+│   │                                   LoginRequest · LoginResponse
 │   ├── mapper/                         ProductMapper (MapStruct)
 │   └── usecase/
-│       └── ProductUseCase              implements ProductServicePort
-│                                       inyecta ProductRepositoryPort
+│       ├── ProductUseCase              implements ProductServicePort
+│       │                               inyecta ProductRepositoryPort
+│       ├── AuthUseCase                 implements AuthServicePort — firma el JWT (HS256)
+│       └── DemoUserStore               usuarios demo hardcoded (bcrypt) — no es un store real
 │
 ├── domain/                           ← Modelo de dominio puro
 │   └── model/                          Product · BaseEntity · PagedResponse
@@ -55,6 +60,7 @@ src/main/java/com/products/
 │                                     ConstraintViolationExceptionMapper
 │                                     JsonProcessingExceptionMapper
 │                                     ProductNotFoundException · DuplicateSkuException
+│                                     InvalidCredentialsException
 └── health/                           LivenessCheck · ReadinessCheck (MongoDB + Redis)
 ```
 
@@ -135,17 +141,32 @@ Coverage verificado con JaCoCo: mínimo ≥ 80% de líneas (LINE). Cobertura act
 
 ## Endpoints
 
-### Productos
+### Auth
 
 | Método | Endpoint | Descripción |
 |---|---|---|
-| `POST` | `/api/v1/products` | Crear producto |
-| `GET` | `/api/v1/products?page=0&size=10` | Listar con paginación |
-| `GET` | `/api/v1/products/{id}` | Buscar por ID |
-| `PUT` | `/api/v1/products/{id}` | Actualizar |
-| `DELETE` | `/api/v1/products/{id}` | Eliminar |
-| `GET` | `/api/v1/products/sku/{sku}` | Buscar por SKU |
-| `GET` | `/api/v1/products/search?prefix=lap` | Buscar por prefijo de nombre |
+| `POST` | `/api/v1/auth/login` | Login — devuelve un JWT firmado RS256 con `privateKey.pem` (`smallrye-jwt-build`) |
+
+Body: `{"username": "...", "password": "..."}`. Usuarios demo (`DemoUserStore.java`, hardcoded con bcrypt):
+
+| Usuario | Password | Roles |
+|---|---|---|
+| `admin` | `admin123` | `ADMIN`, `USER` |
+| `user` | `user123` | `USER` |
+
+### Productos — requieren JWT
+
+Todos los endpoints de `/api/v1/products/**` exigen header `Authorization: Bearer <token>` (obtenido de `/api/v1/auth/login`). Lectura (`GET`) acepta `ADMIN` o `USER`; escritura (`POST`/`PUT`/`DELETE`) exige `ADMIN`. Sin token válido, responden `401`.
+
+| Método | Endpoint | Rol requerido | Descripción |
+|---|---|---|---|
+| `POST` | `/api/v1/products` | `ADMIN` | Crear producto |
+| `GET` | `/api/v1/products?page=0&size=10` | `ADMIN`, `USER` | Listar con paginación |
+| `GET` | `/api/v1/products/{id}` | `ADMIN`, `USER` | Buscar por ID |
+| `PUT` | `/api/v1/products/{id}` | `ADMIN` | Actualizar |
+| `DELETE` | `/api/v1/products/{id}` | `ADMIN` | Eliminar |
+| `GET` | `/api/v1/products/sku/{sku}` | `ADMIN`, `USER` | Buscar por SKU |
+| `GET` | `/api/v1/products/search?prefix=lap` | `ADMIN`, `USER` | Buscar por prefijo de nombre |
 
 ### Health
 
@@ -191,14 +212,14 @@ Extension `quarkus-micrometer-registry-prometheus`. Endpoint en formato Promethe
 GET /api/v1/q/metrics
 ```
 
-Las métricas HTTP (`http_server_requests_seconds_*`) incluyen labels `method`, `outcome`, `status` y `uri`. El K8s `deployment.yaml` ya tiene las annotations `prometheus.io/scrape`, `prometheus.io/path` y `prometheus.io/port` para autodescubrimiento.
+Las métricas HTTP (`http_server_requests_seconds_*`) incluyen labels `method`, `outcome`, `status` y `uri`. El Deployment del chart de Helm (`chart/templates/deployment-api.yaml`) ya tiene las annotations `prometheus.io/scrape`, `prometheus.io/path` y `prometheus.io/port` para autodescubrimiento.
 
 ### Trazas distribuidas
 
 Extension `quarkus-opentelemetry`. Las trazas se exportan via OTLP gRPC al colector configurado en:
 
 ```env
-OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317   # valor en k8s/configmap.yaml
+OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317   # valor en chart/templates/configmap.yaml
 ```
 
 En local el default es `http://localhost:4317`. Quarkus auto-instrumenta todas las llamadas REST, MongoDB y Redis.
@@ -226,11 +247,11 @@ Los logs van a stdout y son capturados por el runtime de K8s / Docker.
 
 ### Alertas K8s
 
-`k8s/prometheus-rule.yaml` define un `PrometheusRule` (requiere [Prometheus Operator](https://prometheus-operator.dev)) con tres alertas: `HighErrorRate` (crítico, >5% 5xx), `HighP99Latency` (warning, P99 >1s) y `PodNotReady` (crítico).
+`chart/templates/prometheus-rule.yaml` define un `PrometheusRule` (requiere [Prometheus Operator](https://prometheus-operator.dev)) con tres alertas: `HighErrorRate` (crítico, >5% 5xx), `HighP99Latency` (warning, P99 >1s) y `PodNotReady` (crítico).
 
 ### Grafana
 
-`k8s/grafana.yaml` despliega Grafana 11.1 con datasource Prometheus y dashboard pre-provisionado (request rate, error rate, P50/P99 latency, JVM memory).
+`chart/templates/grafana.yaml` despliega Grafana 11.1 con datasource Prometheus y dashboard pre-provisionado (request rate, error rate, P50/P99 latency, JVM memory).
 
 ```bash
 kubectl port-forward svc/grafana 3000:3000
@@ -256,9 +277,9 @@ Los archivos están en `postman/` en la raíz del repositorio.
 
 | Archivo | Descripción |
 |---|---|
-| `product-management.postman_collection.json` | Colección principal (10 requests) |
-| `product-management.local.postman_environment.json` | Environment local — `http://localhost` (gateway Docker Compose) |
-| `product-management.k8s.postman_environment.json` | Environment K8s — `http://product.local` (Ingress nginx) |
+| `quarkus-react-fullstack-k8s.postman_collection.json` | Colección principal |
+| `quarkus-react-fullstack-k8s.local.postman_environment.json` | Environment local — `http://localhost` (gateway Docker Compose) |
+| `quarkus-react-fullstack-k8s.k8s.postman_environment.json` | Environment K8s — `http://product.local` (Ingress nginx) |
 
 **Pasos de importación:**
 
@@ -266,7 +287,7 @@ Los archivos están en `postman/` en la raíz del repositorio.
 2. Seleccionar el environment en la esquina superior derecha:
    - **product-management — local** → apunta al gateway Docker Compose en `http://localhost`.
    - **product-management — k8s** → apunta al Ingress en `http://product.local`.
-3. Ejecutar los requests en orden: `01 - Create Product` captura `productId` automáticamente para los requests `03`, `06` y `07`.
+3. Ejecutar los requests en orden: `00 - Login` captura el JWT automáticamente (usado como Bearer auth a nivel de colección para los requests `01`-`07`); `01 - Create Product` captura `productId` para los requests `03`, `06` y `07`.
 
 > Para K8s, añadir `product.local` en `/etc/hosts` apuntando a la IP del Ingress controller.
 
@@ -298,29 +319,19 @@ docker build -t product-web .
 
 ## Kubernetes
 
-Los manifests están en `k8s/` en la raíz del repositorio. Aplicar en orden desde la raíz:
+Los manifests reales están en `chart/` (Helm) en la raíz del repositorio — es lo mismo que aplica `deploy.yml` en CI. `k8s/deployment.yaml` y `k8s/web-deployment.yaml` NO se aplican directamente; solo existen como ancla para que CI persista el último tag de imagen construido (ver README raíz, sección CI/CD).
 
-> **Paso previo:** crear el secret con credenciales reales antes de aplicar los manifests:
+> **Paso previo:** las credenciales de Mongo se pasan como `--set` al instalar el chart, no se crean por separado:
 > ```bash
-> kubectl create secret generic mongo-secret \
->   --from-literal=MONGO_USERNAME=<user> \
->   --from-literal=MONGO_PASSWORD=<password> \
->   --from-literal=MONGODB_CONNECTION_STRING=mongodb://<user>:<password>@mongo-service:27017
+> helm upgrade --install product-management ./chart \
+>   --namespace product-management --create-namespace \
+>   --set secrets.mongoUsername=<user> \
+>   --set secrets.mongoPassword=<password> \
+>   --set "secrets.mongoConnectionString=mongodb://<user>:<password>@mongo-service:27017"
 > ```
 
 ```bash
-kubectl apply -f k8s/issuer.yaml
-kubectl apply -f k8s/secret.yaml
-kubectl apply -f k8s/configmap.yaml
-kubectl apply -f k8s/mongo.yaml
-kubectl apply -f k8s/redis.yaml
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
-kubectl apply -f k8s/web-deployment.yaml
-kubectl apply -f k8s/web-service.yaml
-kubectl apply -f k8s/ingress.yaml
-kubectl apply -f k8s/prometheus-rule.yaml   # requiere Prometheus Operator
-kubectl apply -f k8s/grafana.yaml
+helm upgrade --install product-management ./chart --namespace product-management --create-namespace
 ```
 
 El Ingress expone todo bajo `product.local`:

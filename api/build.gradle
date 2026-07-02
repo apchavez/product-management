@@ -44,6 +44,7 @@ dependencies {
     implementation 'io.quarkus:quarkus-opentelemetry'
     implementation 'io.quarkus:quarkus-smallrye-jwt'
     implementation 'io.quarkus:quarkus-smallrye-jwt-build'
+    implementation 'io.quarkus:quarkus-elytron-security-common'
     implementation 'io.quarkus:quarkus-logging-json'
 
     /* MapStruct */
@@ -60,7 +61,7 @@ dependencies {
     testImplementation 'io.quarkus:quarkus-junit5-mockito'
     testImplementation 'org.assertj:assertj-core:3.27.7'
     testImplementation 'io.quarkus:quarkus-jacoco'
-    testImplementation 'org.testcontainers:mongodb'
+    testImplementation 'org.testcontainers:testcontainers-mongodb'
 }
 
 tasks.named('test') {

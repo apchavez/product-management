@@ -2,8 +2,14 @@
   "info": {
     "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "name": "Product Management API",
-    "description": "CRUD de productos, búsquedas y health checks. Usa {{baseUrl}} para alternar entre entornos.",
+    "description": "CRUD de productos, búsquedas y health checks. Usa {{baseUrl}} para alternar entre entornos. Los endpoints de productos requieren JWT — ejecuta '00 - Login' primero, el token se captura automáticamente y se reutiliza vía la auth Bearer a nivel de colección.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
   },
   "variable": [
     {
@@ -15,9 +21,51 @@
       "key": "productId",
       "value": "",
       "description": "ID del producto creado. Se captura automáticamente al ejecutar '01 - Create Product'."
+    },
+    {
+      "key": "token",
+      "value": "",
+      "description": "JWT capturado automáticamente al ejecutar '00 - Login'. Usado como Bearer auth a nivel de colección."
     }
   ],
   "item": [
+    {
+      "name": "00 - Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('token returned', () => pm.expect(json.data.token).to.be.a('string'));",
+              "if (json.data && json.data.token) {",
+              "    pm.collectionVariables.set('token', json.data.token);",
+              "    console.log('token captured');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+        },
+        "description": "Usuarios demo (DemoUserStore.java): admin/admin123 (ADMIN+USER), user/user123 (USER).",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "auth", "login"]
+        }
+      }
+    },
     {
       "name": "01 - Create Product",
       "event": [
@@ -234,6 +282,7 @@
         }
       ],
       "request": {
+        "auth": { "type": "noauth" },
         "method": "GET",
         "url": {
           "raw": "{{baseUrl}}/api/v1/q/health",
@@ -259,6 +308,7 @@
         }
       ],
       "request": {
+        "auth": { "type": "noauth" },
         "method": "GET",
         "url": {
           "raw": "{{baseUrl}}/api/v1/q/health/live",
@@ -284,6 +334,7 @@
         }
       ],
       "request": {
+        "auth": { "type": "noauth" },
         "method": "GET",
         "url": {
           "raw": "{{baseUrl}}/api/v1/q/health/ready",
@@ -309,6 +360,7 @@
         }
       ],
       "request": {
+        "auth": { "type": "noauth" },
         "method": "GET",
         "description": "Prometheus metrics endpoint (text/plain). Scrapeado automáticamente por Prometheus via annotations en el pod.",
         "url": {

@@ -51,7 +51,8 @@ describe('getProducts', () => {
     await getProducts();
 
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('page=0')
+      expect.stringContaining('page=0'),
+      expect.anything()
     );
   });
 

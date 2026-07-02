@@ -1,9 +1,10 @@
 import type { Product } from '../types/product';
+import { apiFetch } from './httpClient';
 
 const BASE_URL = '/api/v1/products';
 
 export async function getProducts(page = 0, size = 10) {
-  const response = await fetch(`${BASE_URL}?page=${page}&size=${size}`);
+  const response = await apiFetch(`${BASE_URL}?page=${page}&size=${size}`);
 
   if (!response.ok) {
     throw new Error('Error al obtener productos');
@@ -25,7 +26,7 @@ export async function getProducts(page = 0, size = 10) {
 }
 
 export async function createProduct(product: Product): Promise<Product> {
-  const response = await fetch(BASE_URL, {
+  const response = await apiFetch(BASE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(product)
@@ -35,7 +36,7 @@ export async function createProduct(product: Product): Promise<Product> {
 }
 
 export async function updateProduct(id: string, product: Product): Promise<Product> {
-  const response = await fetch(`${BASE_URL}/${id}`, {
+  const response = await apiFetch(`${BASE_URL}/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(product)
@@ -45,7 +46,7 @@ export async function updateProduct(id: string, product: Product): Promise<Produ
 }
 
 export async function deleteProduct(id: string): Promise<void> {
-  const response = await fetch(`${BASE_URL}/${id}`, {
+  const response = await apiFetch(`${BASE_URL}/${id}`, {
     method: 'DELETE'
   });
   if (!response.ok) throw new Error('Error al eliminar producto');

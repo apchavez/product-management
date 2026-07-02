@@ -17,4 +17,9 @@ public class DomainExceptionMapper {
     public Response handleDuplicateSku(DuplicateSkuException ex) {
         return ApiResponse.conflictKey();
     }
+
+    @ServerExceptionMapper
+    public Response handleInvalidCredentials(InvalidCredentialsException ex) {
+        return ApiResponse.error(401, 401, ex.getMessage());
+    }
 }

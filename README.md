@@ -54,20 +54,13 @@ product-management/
 │   ├── src/
 │   ├── Dockerfile
 │   └── nginx.conf
-├── k8s/                            Kubernetes manifests (full stack)
-│   ├── issuer.yaml
-│   ├── secret.yaml
-│   ├── configmap.yaml              Env vars incl. OTEL_EXPORTER_OTLP_ENDPOINT
-│   ├── mongo.yaml
-│   ├── redis.yaml
-│   ├── deployment.yaml             Prometheus scrape annotations included
-│   ├── service.yaml
-│   ├── web-deployment.yaml
-│   ├── web-service.yaml
-│   ├── ingress.yaml
-│   ├── prometheus-rule.yaml        PrometheusRule CRD — alert rules
-│   ├── grafana.yaml                Grafana 11.1 deployment + pre-provisioned dashboard
-│   └── network-policy.yaml         NetworkPolicy — restricts ingress/egress to known services
+├── chart/                           Helm chart — the manifests actually deployed (deploy.yml)
+│   ├── Chart.yaml, values.yaml
+│   └── templates/                  Deployments, services, ingress, mongo, redis, issuer,
+│                                    PrometheusRule, Grafana, NetworkPolicy, PDB
+├── k8s/                             CI-only image tag pins, NOT applied directly (see CI/CD)
+│   ├── deployment.yaml              product-api image tag, rewritten by docker-publish.yml
+│   └── web-deployment.yaml          product-web image tag, rewritten by docker-publish-web.yml
 ├── docker/
 │   └── gateway.conf                nginx gateway (Docker Compose)
 ├── postman/
@@ -97,7 +90,7 @@ docker compose up --build
 ### Kubernetes
 
 ```bash
-kubectl apply -f k8s/
+helm upgrade --install product-management ./chart --namespace product-management --create-namespace
 ```
 
 Add `product.local` to `/etc/hosts` pointing to your Ingress controller IP, then access the app at `http://product.local`.
@@ -135,16 +128,16 @@ GitHub Actions runs tests, publishes Docker images to GHCR, and deploys to Kuber
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `ci.yml` | Every push / PR to `main` | Backend tests + JaCoCo coverage gate; frontend typecheck, tests, and coverage; Playwright E2E; SonarCloud (on main) |
-| `docker-publish.yml` | Push / PR to `main` (`api/**`) | Backend tests + coverage → builds and pushes `ghcr.io/apchavez/product-api:sha-<SHA>` → pins tag in `k8s/deployment.yaml` |
+| `docker-publish.yml` | Push / PR to `main` (`api/**`) | Backend tests + coverage → builds and pushes `ghcr.io/apchavez/product-api:sha-<SHA>` → pins tag in `k8s/deployment.yaml` (CI-only tag-pin file, see [Repository Structure](#repository-structure)) |
 | `docker-publish-web.yml` | Push / PR to `main` (`web/**`) | Frontend typecheck, tests, coverage → builds and pushes `ghcr.io/apchavez/product-web:sha-<SHA>` → pins tag in `k8s/web-deployment.yaml` |
-| `deploy.yml` | Automatic after docker-publish (any service) · Manual via `workflow_dispatch` | `kubectl apply -f k8s/` → verifies rollout of `product-api` and `product-web` |
+| `deploy.yml` | Automatic after docker-publish (any service) · Manual via `workflow_dispatch` | Reads the pinned tags from `k8s/*.yaml`, then `helm upgrade --install product-management ./chart` → verifies rollout of `product-api` and `product-web` |
 
 ### Deploy flow
 
 ```
 push to main (api/ or web/)
-  → docker-publish*.yml  (test → build → push image → pin SHA tag in k8s manifest)
-  → deploy.yml           (checkout main → kubectl apply -f k8s/ → rollout status)
+  → docker-publish*.yml  (test → build → push image → pin SHA tag in k8s/*.yaml)
+  → deploy.yml           (checkout main → read pinned tag → helm upgrade ./chart → rollout status)
 ```
 
 **Required secret:** `KUBECONFIG` — kubeconfig file content, configured in the `production` GitHub environment.
@@ -189,7 +182,7 @@ In the `prod` profile, logs are emitted as structured JSON to stdout — ready f
 
 ### Alerting
 
-`k8s/prometheus-rule.yaml` defines a `PrometheusRule` (requires [Prometheus Operator](https://prometheus-operator.dev)) with three rules:
+`chart/templates/prometheus-rule.yaml` defines a `PrometheusRule` (requires [Prometheus Operator](https://prometheus-operator.dev)) with three rules:
 
 | Alert | Condition | Severity |
 |---|---|---|
@@ -199,7 +192,7 @@ In the `prod` profile, logs are emitted as structured JSON to stdout — ready f
 
 ### Grafana
 
-`k8s/grafana.yaml` deploys Grafana 11.1 with a pre-provisioned Prometheus datasource and a dashboard covering request rate, error rate, P50/P99 latency, and JVM memory. Access it locally with:
+`chart/templates/grafana.yaml` deploys Grafana 11.1 with a pre-provisioned Prometheus datasource and a dashboard covering request rate, error rate, P50/P99 latency, and JVM memory. Access it locally with:
 
 ```bash
 kubectl port-forward svc/grafana 3000:3000
@@ -215,11 +208,11 @@ The `postman/` folder contains the collection and two environments.
 
 | File | Description |
 |---|---|
-| `quarkus-react-fullstack-k8s.postman_collection.json` | Main collection (11 requests) |
+| `quarkus-react-fullstack-k8s.postman_collection.json` | Main collection (12 requests) |
 | `quarkus-react-fullstack-k8s.local.postman_environment.json` | Local environment via Docker Compose |
 | `quarkus-react-fullstack-k8s.k8s.postman_environment.json` | Kubernetes environment (`product.local`) |
 
-Import all three files into Postman, select the appropriate environment, and run the requests in order — `01 - Create Product` automatically captures `productId` for subsequent requests.
+Import all three files into Postman, select the appropriate environment, and run the requests in order — `00 - Login` captures a JWT automatically and applies it as the collection's Bearer auth for every subsequent request; `01 - Create Product` captures `productId` for later requests. Health/metrics endpoints (`08`-`11`) are marked `noauth` since they don't require a token.
 
 > For K8s: add `product.local` to `/etc/hosts` pointing to the Ingress controller IP before running the collection.
 
@@ -235,6 +228,8 @@ Documentation is auto-generated at startup from MicroProfile OpenAPI annotations
 | OpenAPI spec | `http://localhost:8080/api/v1/q/openapi` | Always available |
 
 The Swagger UI is enabled in dev mode only (`%dev.quarkus.swagger-ui.enable=true`). To test protected endpoints from the UI, click **Authorize** and enter `Bearer <token>`. All endpoints require the `BearerAuth` scheme. Roles: `ADMIN` (write access), `USER` (read-only).
+
+**Getting a token:** `POST /api/v1/auth/login` with `{"username": "...", "password": "..."}` returns a signed JWT. Demo users: `admin`/`admin123` (ADMIN + USER) and `user`/`user123` (USER only) — see `DemoUserStore.java`. The React frontend (`web/`) has a login page at `/login` that calls this endpoint, stores the token, and attaches it as a Bearer header to every API request; it redirects to `/login` automatically on a 401.
 
 **Start in dev mode:**
 

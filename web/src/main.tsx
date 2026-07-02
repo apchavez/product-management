@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, useRoutes } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { getAppRoutes } from './routes';
+import { AuthProvider } from './auth/AuthContext';
 
 const theme = createTheme({
   palette: {
@@ -24,9 +25,11 @@ function AppRoot() {
     <StrictMode>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <BrowserRouter>
-          <RoutesContainer />
-        </BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>
+            <RoutesContainer />
+          </BrowserRouter>
+        </AuthProvider>
       </ThemeProvider>
     </StrictMode>
   );

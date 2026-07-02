@@ -20,6 +20,9 @@ Frontend para administración de productos, construido con React + TypeScript + 
 
 ## Funcionalidades
 
+- Login (`/login`) — credenciales demo: `admin`/`admin123` (ADMIN+USER), `user`/`user123` (USER)
+- Rutas de producto protegidas por sesión (`RequireAuth`); sin token válido, redirige a `/login`
+- Logout desde la barra superior (`AppLayout`)
 - Listado paginado de productos
 - Crear / Editar / Eliminar producto
 - Validación de formulario en cliente
@@ -37,8 +40,24 @@ src/
 │   └── routes.test.tsx
 ├── api/
 │   ├── __tests__/
-│   │   └── productsApi.test.ts
-│   └── productsApi.ts        # Llamadas HTTP al backend
+│   │   ├── productsApi.test.ts
+│   │   └── httpClient.test.ts
+│   ├── productsApi.ts        # Llamadas HTTP al backend
+│   └── httpClient.ts         # apiFetch — agrega Authorization: Bearer, maneja 401
+├── auth/
+│   ├── __tests__/
+│   │   ├── AuthContext.test.tsx
+│   │   ├── LoginPage.test.tsx
+│   │   ├── RequireAuth.test.tsx
+│   │   ├── AppLayout.test.tsx
+│   │   ├── authApi.test.ts
+│   │   └── tokenStorage.test.ts
+│   ├── AuthContext.tsx       # Estado de sesión (login/logout/isAuthenticated)
+│   ├── LoginPage.tsx         # Formulario de login (ruta /login)
+│   ├── RequireAuth.tsx       # Route guard — redirige a /login sin sesión
+│   ├── AppLayout.tsx         # Barra superior con usuario + logout
+│   ├── authApi.ts            # POST /api/v1/auth/login
+│   └── tokenStorage.ts       # Persistencia del token en localStorage
 ├── components/
 │   ├── __tests__/
 │   │   ├── ProductForm.test.tsx
@@ -93,14 +112,21 @@ pnpm test:coverage  # ejecuta con reporte de cobertura (verifica umbral ≥ 80%)
 pnpm test:watch     # modo watch
 ```
 
-50 tests en 6 suites:
+73 tests en 13 suites:
 
 - `productsApi.test.ts` — 9 tests: getProducts, createProduct, updateProduct, deleteProduct (happy path + error path)
 - `App.test.tsx` — 10 tests: render, interacciones de UI, paginación, snackbar
-- `routes.test.tsx` — 4 tests: estructura de rutas
+- `routes.test.tsx` — 5 tests: estructura de rutas (login pública + rutas protegidas)
 - `useProducts.test.ts` — 11 tests: carga inicial, create, update, delete, errores, paginación, editingProduct
 - `ProductForm.test.tsx` — 10 tests: validación, envío, modo edición, revalidación en tiempo real
 - `ProductsTable.test.tsx` — 6 tests: renderizado, lista vacía, callbacks de editar/eliminar
+- `httpClient.test.ts` — 4 tests: agrega Bearer token, limpia sesión y redirige en 401
+- `AuthContext.test.tsx` — 4 tests: login/logout, estado inicial, error fuera de provider
+- `LoginPage.test.tsx` — 4 tests: render, login exitoso, credenciales inválidas, redirect si ya autenticado
+- `RequireAuth.test.tsx` — 2 tests: pasa con sesión, redirige a /login sin sesión
+- `AppLayout.test.tsx` — 2 tests: muestra usuario, logout
+- `authApi.test.ts` — 2 tests: login exitoso, credenciales inválidas
+- `tokenStorage.test.ts` — 4 tests: set/get/clear, JSON malformado en localStorage
 
 Coverage (Vitest v8): ≥ 80% en statements, branches, functions y lines. Thresholds configurados en `vite.config.ts`.
 
@@ -137,7 +163,10 @@ Se dispara en push **y** pull_request hacia `main` dentro de `web/`.
 
 | Método | Endpoint | Descripción |
 |---|---|---|
+| `POST` | `/api/v1/auth/login` | Login — `authApi.ts`, guarda el token vía `tokenStorage.ts` |
 | `GET` | `/api/v1/products?page=0&size=10` | Listado paginado |
 | `POST` | `/api/v1/products` | Crear producto |
 | `PUT` | `/api/v1/products/{id}` | Actualizar producto |
 | `DELETE` | `/api/v1/products/{id}` | Eliminar producto |
+
+Todas las llamadas a `/api/v1/products/**` pasan por `httpClient.apiFetch`, que agrega el header `Authorization: Bearer <token>` automáticamente. Si el backend responde `401`, `apiFetch` limpia la sesión y redirige a `/login`.
